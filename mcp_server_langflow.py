@@ -39,7 +39,7 @@ session_lock = threading.Lock()
 
 
 def send_to_teams(message: str) -> dict:
-    """Send a message to Microsoft Teams via webhook"""
+    """Send a simple text message to Microsoft Teams via webhook"""
     try:
         payload = {
             "text": message,
@@ -59,6 +59,228 @@ def send_to_teams(message: str) -> dict:
             return {
                 "success": True,
                 "message": "Message sent to Teams successfully",
+                "status_code": response.status_code
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Failed to send. Status: {response.status_code}",
+                "error": response.text
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+
+
+def send_adaptive_card(title: str, message: str, priority: str = "normal",
+                      facts: dict = None, image_url: str = None,
+                      sender: str = None) -> dict:
+    """Send a rich formatted Adaptive Card message to Teams
+
+    Args:
+        title: Card title
+        message: Main message content
+        priority: Priority level (urgent, high, normal, low)
+        facts: Dictionary of key-value pairs to display as facts
+        image_url: Optional image URL to include
+        sender: Optional sender name/identifier
+    """
+    try:
+        # Color coding based on priority
+        priority_colors = {
+            "urgent": "attention",  # Red
+            "high": "warning",      # Yellow
+            "normal": "good",       # Green
+            "low": "default"        # Gray
+        }
+
+        priority_icons = {
+            "urgent": "🚨",
+            "high": "⚠️",
+            "normal": "ℹ️",
+            "low": "📝"
+        }
+
+        theme_color = priority_colors.get(priority.lower(), "default")
+        icon = priority_icons.get(priority.lower(), "ℹ️")
+
+        # Build the card body
+        card_body = [
+            {
+                "type": "TextBlock",
+                "text": f"{icon} {title}",
+                "weight": "bolder",
+                "size": "large",
+                "wrap": True
+            },
+            {
+                "type": "TextBlock",
+                "text": message,
+                "wrap": True,
+                "spacing": "medium"
+            }
+        ]
+
+        # Add image if provided
+        if image_url:
+            card_body.append({
+                "type": "Image",
+                "url": image_url,
+                "size": "large",
+                "spacing": "medium"
+            })
+
+        # Add facts if provided
+        if facts:
+            fact_set = {
+                "type": "FactSet",
+                "facts": [{"title": k, "value": str(v)} for k, v in facts.items()],
+                "spacing": "medium"
+            }
+            card_body.append(fact_set)
+
+        # Add metadata footer
+        footer_facts = []
+        if sender:
+            footer_facts.append({"title": "From", "value": sender})
+        footer_facts.append({
+            "title": "Sent",
+            "value": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+        footer_facts.append({
+            "title": "Priority",
+            "value": priority.upper()
+        })
+
+        card_body.append({
+            "type": "FactSet",
+            "facts": footer_facts,
+            "spacing": "medium",
+            "separator": True
+        })
+
+        # Construct the Adaptive Card payload
+        adaptive_card = {
+            "type": "message",
+            "attachments": [{
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                    "type": "AdaptiveCard",
+                    "version": "1.4",
+                    "body": card_body,
+                    "msteams": {
+                        "width": "full"
+                    }
+                }
+            }]
+        }
+
+        headers = {"Content-Type": "application/json"}
+
+        response = requests.post(
+            TEAMS_WEBHOOK_URL,
+            json=adaptive_card,
+            headers=headers,
+            timeout=10
+        )
+
+        if response.status_code in [200, 202]:
+            return {
+                "success": True,
+                "message": "Adaptive Card sent to Teams successfully",
+                "status_code": response.status_code,
+                "card_type": "adaptive",
+                "priority": priority
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Failed to send. Status: {response.status_code}",
+                "error": response.text
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+
+
+def send_notification(title: str, message: str, priority: str = "normal",
+                      action_url: str = None, action_text: str = "View Details") -> dict:
+    """Send a notification-style message with optional action button
+
+    Args:
+        title: Notification title
+        message: Notification message
+        priority: Priority level (urgent, high, normal, low)
+        action_url: Optional URL for action button
+        action_text: Text for the action button
+    """
+    try:
+        facts = {
+            "Priority": priority.upper(),
+            "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        # If action URL provided, send adaptive card with button
+        if action_url:
+            card_body = [
+                {
+                    "type": "TextBlock",
+                    "text": title,
+                    "weight": "bolder",
+                    "size": "large",
+                    "wrap": True
+                },
+                {
+                    "type": "TextBlock",
+                    "text": message,
+                    "wrap": True,
+                    "spacing": "medium"
+                },
+                {
+                    "type": "FactSet",
+                    "facts": [{"title": k, "value": v} for k, v in facts.items()],
+                    "spacing": "medium"
+                }
+            ]
+
+            adaptive_card = {
+                "type": "message",
+                "attachments": [{
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "content": {
+                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "type": "AdaptiveCard",
+                        "version": "1.4",
+                        "body": card_body,
+                        "actions": [{
+                            "type": "Action.OpenUrl",
+                            "title": action_text,
+                            "url": action_url
+                        }]
+                    }
+                }]
+            }
+
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(
+                TEAMS_WEBHOOK_URL,
+                json=adaptive_card,
+                headers=headers,
+                timeout=10
+            )
+        else:
+            # Simple notification without action button
+            return send_adaptive_card(title, message, priority, facts)
+
+        if response.status_code in [200, 202]:
+            return {
+                "success": True,
+                "message": "Notification sent to Teams successfully",
                 "status_code": response.status_code
             }
         else:
@@ -164,20 +386,92 @@ def list_tools():
     if not verify_api_key():
         return jsonify({"error": "Unauthorized"}), 401
 
-    tools = [{
-        "name": "send_teams_message",
-        "description": "Send a message to Microsoft Teams via webhook",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "description": "The message text to send to Microsoft Teams"
-                }
-            },
-            "required": ["message"]
+    tools = [
+        {
+            "name": "send_teams_message",
+            "description": "Send a simple text message to Microsoft Teams via webhook",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "The message text to send to Microsoft Teams"
+                    }
+                },
+                "required": ["message"]
+            }
+        },
+        {
+            "name": "send_adaptive_card",
+            "description": "Send a rich formatted Adaptive Card message with priority, facts, images, and metadata",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "The card title"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The main message content"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "description": "Priority level: urgent, high, normal, or low",
+                        "enum": ["urgent", "high", "normal", "low"],
+                        "default": "normal"
+                    },
+                    "facts": {
+                        "type": "object",
+                        "description": "Optional key-value pairs to display as facts (e.g., {'Status': 'Running', 'Progress': '75%'})",
+                        "additionalProperties": {"type": "string"}
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "description": "Optional image URL to include in the card"
+                    },
+                    "sender": {
+                        "type": "string",
+                        "description": "Optional sender name or identifier"
+                    }
+                },
+                "required": ["title", "message"]
+            }
+        },
+        {
+            "name": "send_notification",
+            "description": "Send a notification with optional action button",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "The notification title"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The notification message"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "description": "Priority level: urgent, high, normal, or low",
+                        "enum": ["urgent", "high", "normal", "low"],
+                        "default": "normal"
+                    },
+                    "action_url": {
+                        "type": "string",
+                        "description": "Optional URL for the action button"
+                    },
+                    "action_text": {
+                        "type": "string",
+                        "description": "Text for the action button (default: 'View Details')",
+                        "default": "View Details"
+                    }
+                },
+                "required": ["title", "message"]
+            }
         }
-    }]
+    ]
 
     return jsonify({"tools": tools})
 
@@ -189,8 +483,28 @@ def call_tool():
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json() or {}
+
+    # DEBUG: Log incoming request
+    print("=" * 70)
+    print("INCOMING REQUEST TO /mcp/tools/call")
+    print(f"Headers: {dict(request.headers)}")
+    print(f"Raw data: {request.get_data(as_text=True)}")
+    print(f"Parsed JSON: {json.dumps(data, indent=2)}")
+    print("=" * 70)
+
     tool_name = data.get("name")
     arguments = data.get("arguments", {})
+
+    # Handle case where arguments might be a string instead of dict
+    if isinstance(arguments, str):
+        print(f"WARNING: arguments is a string, not a dict: {arguments}")
+        return jsonify({
+            "isError": True,
+            "content": [{
+                "type": "text",
+                "text": f"Error: arguments must be a JSON object, received string: {arguments}"
+            }]
+        }), 400
 
     if tool_name == "send_teams_message":
         message = arguments.get("message", "")
@@ -205,6 +519,59 @@ def call_tool():
             }), 400
 
         result = send_to_teams(message)
+
+        return jsonify({
+            "content": [{
+                "type": "text",
+                "text": json.dumps(result, indent=2)
+            }],
+            "isError": not result.get("success", False)
+        })
+
+    elif tool_name == "send_adaptive_card":
+        title = arguments.get("title", "")
+        message = arguments.get("message", "")
+        priority = arguments.get("priority", "normal")
+        facts = arguments.get("facts")
+        image_url = arguments.get("image_url")
+        sender = arguments.get("sender")
+
+        if not title or not message:
+            return jsonify({
+                "isError": True,
+                "content": [{
+                    "type": "text",
+                    "text": "Error: Both title and message are required"
+                }]
+            }), 400
+
+        result = send_adaptive_card(title, message, priority, facts, image_url, sender)
+
+        return jsonify({
+            "content": [{
+                "type": "text",
+                "text": json.dumps(result, indent=2)
+            }],
+            "isError": not result.get("success", False)
+        })
+
+    elif tool_name == "send_notification":
+        title = arguments.get("title", "")
+        message = arguments.get("message", "")
+        priority = arguments.get("priority", "normal")
+        action_url = arguments.get("action_url")
+        action_text = arguments.get("action_text", "View Details")
+
+        if not title or not message:
+            return jsonify({
+                "isError": True,
+                "content": [{
+                    "type": "text",
+                    "text": "Error: Both title and message are required"
+                }]
+            }), 400
+
+        result = send_notification(title, message, priority, action_url, action_text)
 
         return jsonify({
             "content": [{
@@ -310,20 +677,53 @@ def mcp_message():
             "jsonrpc": "2.0",
             "id": msg_id,
             "result": {
-                "tools": [{
-                    "name": "send_teams_message",
-                    "description": "Send a message to Microsoft Teams via webhook",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "message": {
-                                "type": "string",
-                                "description": "The message text to send to Microsoft Teams"
-                            }
-                        },
-                        "required": ["message"]
+                "tools": [
+                    {
+                        "name": "send_teams_message",
+                        "description": "Send a simple text message to Microsoft Teams via webhook",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "The message text to send to Microsoft Teams"
+                                }
+                            },
+                            "required": ["message"]
+                        }
+                    },
+                    {
+                        "name": "send_adaptive_card",
+                        "description": "Send a rich formatted Adaptive Card message with priority, facts, images, and metadata",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "title": {"type": "string"},
+                                "message": {"type": "string"},
+                                "priority": {"type": "string", "enum": ["urgent", "high", "normal", "low"]},
+                                "facts": {"type": "object"},
+                                "image_url": {"type": "string"},
+                                "sender": {"type": "string"}
+                            },
+                            "required": ["title", "message"]
+                        }
+                    },
+                    {
+                        "name": "send_notification",
+                        "description": "Send a notification with optional action button",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "title": {"type": "string"},
+                                "message": {"type": "string"},
+                                "priority": {"type": "string", "enum": ["urgent", "high", "normal", "low"]},
+                                "action_url": {"type": "string"},
+                                "action_text": {"type": "string"}
+                            },
+                            "required": ["title", "message"]
+                        }
                     }
-                }]
+                ]
             }
         }
     elif method == "tools/call":
@@ -332,6 +732,43 @@ def mcp_message():
 
         if tool_name == "send_teams_message":
             result = send_to_teams(arguments.get("message", ""))
+            response = {
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "result": {
+                    "content": [{
+                        "type": "text",
+                        "text": json.dumps(result, indent=2)
+                    }]
+                }
+            }
+        elif tool_name == "send_adaptive_card":
+            result = send_adaptive_card(
+                arguments.get("title", ""),
+                arguments.get("message", ""),
+                arguments.get("priority", "normal"),
+                arguments.get("facts"),
+                arguments.get("image_url"),
+                arguments.get("sender")
+            )
+            response = {
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "result": {
+                    "content": [{
+                        "type": "text",
+                        "text": json.dumps(result, indent=2)
+                    }]
+                }
+            }
+        elif tool_name == "send_notification":
+            result = send_notification(
+                arguments.get("title", ""),
+                arguments.get("message", ""),
+                arguments.get("priority", "normal"),
+                arguments.get("action_url"),
+                arguments.get("action_text", "View Details")
+            )
             response = {
                 "jsonrpc": "2.0",
                 "id": msg_id,
