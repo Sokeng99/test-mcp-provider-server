@@ -79,7 +79,7 @@ class EnhancedTeamsMessageSender(Component):
 
     def send_message(self) -> Data:
         # MCP server configuration
-        url = "http://localhost:5000/mcp/tools/call"
+        url = "http://host.docker.internal:5000/mcp/tools/call"
         headers = {
             "Authorization": "Bearer langflow-teams-secret-123456",
             "Content-Type": "application/json"
@@ -178,7 +178,7 @@ class SimpleTeamsMessage(Component):
     ]
 
     def send_message(self) -> Data:
-        url = "http://localhost:5000/mcp/tools/call"
+        url = "http://host.docker.internal:5000/mcp/tools/call"
         headers = {
             "Authorization": "Bearer langflow-teams-secret-123456",
             "Content-Type": "application/json"
@@ -240,7 +240,7 @@ class AdaptiveCardMessage(Component):
     ]
 
     def send_message(self) -> Data:
-        url = "http://localhost:5000/mcp/tools/call"
+        url = "http://host.docker.internal:5000/mcp/tools/call"
         headers = {
             "Authorization": "Bearer langflow-teams-secret-123456",
             "Content-Type": "application/json"

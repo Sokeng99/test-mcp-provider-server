@@ -17,10 +17,12 @@ from datetime import datetime
 load_dotenv()
 
 # Configuration
-TEAMS_WEBHOOK_URL = os.getenv(
-    "TEAMS_WEBHOOK_URL",
-    "https://default2780a32d11ce4c57bad5ce0cffc115.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/26e512fb89fa43aea71085fd99bada49/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=pQxmWrPAumQYq4SKLmX5zbew9YgQrwRYsIDyCHR_nVQ"
-)
+# TEAMS_WEBHOOK_URL = os.getenv(
+#     "TEAMS_WEBHOOK_URL",
+#     "https://default2780a32d11ce4c57bad5ce0cffc115.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/26e512fb89fa43aea71085fd99bada49/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=pQxmWrPAumQYq4SKLmX5zbew9YgQrwRYsIDyCHR_nVQ"
+# )
+TEAMS_WEBHOOK_URL = os.getenv("TEAMS_WEBHOOK_URL",
+    "https://default2780a32d11ce4c57bad5ce0cffc115.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/4c6193fbd6cb404db26c9a5474f02451/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ZCjuey-Mm27TfQ32JfudmuniMzTR5wi92BVXbz1UgJ4")
 MCP_API_KEY = os.getenv("MCP_API_KEY", "langflow-teams-secret-123456")
 
 app = Flask(__name__)
