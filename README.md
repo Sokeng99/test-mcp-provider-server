@@ -1,127 +1,221 @@
-# MCP Teams Webhook Server
+# MCP Teams Server
 
-Send messages from Langflow to Microsoft Teams using the Model Context Protocol (MCP).
+Simple MCP server to send messages from Langflow to Microsoft Teams. **100% FREE** - no premium features required!
 
-## Quick Start
+## Features
 
-### 1. Install Dependencies
+- ✅ Send text messages to Teams
+- ✅ Send rich Adaptive Cards with formatting
+- ✅ Send images from local files
+- ✅ Full MCP protocol support for Langflow
+- ✅ Optional two-way communication with n8n
+
+## Quick Setup (5 minutes)
+
+### 1. Get Teams Incoming Webhook URL
+
+1. In Microsoft Teams, go to your channel
+2. Click **...** → **Connectors** → **Incoming Webhook**
+3. Click **Add** → **Configure**
+4. Name: `Langflow Bot`
+5. Click **Create** and **copy the webhook URL**
+
+### 2. Configure Environment
 
 ```bash
-pip install -r requirements.txt
+# Copy example config
+cp .env.example .env
+
+# Edit .env and paste your webhook URL
+TEAMS_WEBHOOK_URL=https://your-org.webhook.office.com/webhookb2/...
+MCP_API_KEY=langflow-teams-secret-123456
 ```
 
-### 2. Start the Server
+### 3. Install & Run
 
 ```bash
-python mcp_server_langflow.py
+# Install dependencies
+pip install -r requirements.txt
+
+# Start server
+python mcp_server.py
 ```
 
 You should see:
 ```
 ======================================================================
-MCP Teams Webhook Server v3.0 (Langflow Compatible)
+MCP Teams Server v1.0 - Simple & FREE!
 ======================================================================
- * Running on http://127.0.0.1:5000
+Webhook: ✓ Configured
 ```
 
-### 3. Configure Langflow
+### 4. Test It
 
-In Langflow: **Settings** → **MCP Servers** → **Add MCP Server** → **JSON tab**
+```bash
+curl -X POST http://localhost:5000/test \
+  -H "Authorization: Bearer langflow-teams-secret-123456" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "🎉 Hello from MCP!"}'
+```
+
+Check your Teams channel - you should see the message!
+
+### 5. Connect to Langflow
+
+In Langflow: **Settings** → **MCP Servers** → **Add Server**
 
 ```json
 {
   "mcpServers": {
-    "teams_webhook": {
+    "teams": {
       "url": "http://host.docker.internal:5000/mcp/sse",
       "headers": {
         "Authorization": "Bearer langflow-teams-secret-123456"
       },
-      "transport": {
-        "type": "sse"
-      }
+      "transport": {"type": "sse"}
     }
   }
 }
 ```
 
-### 4. Use in Langflow
+Now use **MCP Tools** component in your flows!
 
-1. Add **MCP Tools** component to your flow
-2. Select **teams_webhook** as MCP Server
-3. Select **send_teams_message** as Tool
-4. Connect your inputs and run!
+## Available Tools
 
-## Configuration
+### `send_teams_message`
+Send simple text message to Teams.
 
-Edit `.env` file:
-
-```env
-TEAMS_WEBHOOK_URL=your_power_automate_webhook_url
-MCP_API_KEY=your_secret_api_key
+```python
+{
+  "message": "Hello from Langflow!"
+}
 ```
 
-## Test the Server
+### `send_adaptive_card`
+Send rich formatted card with icons and facts.
 
+```python
+{
+  "title": "Status Update",
+  "message": "Workflow completed successfully",
+  "priority": "high",  # urgent, high, normal, low
+  "facts": {
+    "Status": "Complete",
+    "Duration": "2.5s"
+  }
+}
+```
+
+### `send_teams_image`
+Send image from your local computer.
+
+```python
+{
+  "file_path": "C:\\path\\to\\image.png",
+  "caption": "Generated chart"
+}
+```
+
+### `get_teams_messages`
+Get messages sent from Teams (requires n8n setup - see below).
+
+## Two-Way Communication (Optional)
+
+To receive messages FROM Teams, use **n8n** (free, open-source automation):
+
+### Option 1: Using n8n (Recommended - FREE!)
+
+#### Install n8n:
 ```bash
-# Health check
-curl http://localhost:5000/health
+# Using Docker
+docker run -it --rm --name n8n -p 5678:5678 -v ~/.n8n:/home/node/.n8n n8nio/n8n
 
-# Send test message
-curl -X POST http://localhost:5000/test \
-  -H "Authorization: Bearer langflow-teams-secret-123456" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Hello from MCP!"}'
+# Or using npm
+npm install -g n8n
+n8n
 ```
 
-## Features
+#### Create Workflow in n8n:
 
-- ✅ Full MCP protocol support
-- ✅ SSE (Server-Sent Events) transport
-- ✅ Session management
-- ✅ Bidirectional communication
-- ✅ Auto-discovery of tools in Langflow
-- ✅ Schema validation
+1. Go to http://localhost:5678
+2. Create new workflow:
+
+**Trigger Node:**
+- Type: **Webhook**
+- Method: POST
+- Path: `teams-incoming`
+
+**HTTP Request Node:**
+- Method: POST
+- URL: `http://localhost:5000/teams/incoming`
+- Body:
+  ```json
+  {
+    "text": "{{ $json.body.text }}",
+    "user": "{{ $json.body.user }}"
+  }
+  ```
+
+3. Activate workflow
+4. Copy the webhook URL
+5. Use this URL in Teams Incoming Webhook or external trigger
+
+### Option 2: Python Polling (Simpler but less real-time)
+
+Create a Langflow component that polls Teams every 30 seconds using Microsoft Graph API. No external tools needed, but requires Graph API permissions.
 
 ## Architecture
 
+### One-Way (Default):
 ```
-Langflow Agent → MCP Protocol (SSE) → MCP Server → Power Automate → Teams
+Langflow → MCP Server → Teams Incoming Webhook → Teams Channel
 ```
 
-This is a **push-only notification system**:
-- Sends messages FROM Langflow TO Teams
-- Does not receive messages from Teams
-- Perfect for: alerts, notifications, status updates
+### Two-Way (with n8n):
+```
+Teams → n8n → MCP Server → Langflow
+Langflow → MCP Server → Teams Incoming Webhook → Teams
+```
 
 ## Troubleshooting
 
+**"TEAMS_WEBHOOK_URL not configured"**
+- Make sure webhook URL is in `.env` file
+- Restart the server after editing `.env`
+
+**Messages not appearing in Teams:**
+- Test webhook URL directly with curl
+- Check Teams connector is still configured
+- Webhook URLs can expire - create a new one
+
 **Server won't start:**
-- Check if port 5000 is already in use: `netstat -ano | findstr :5000`
+- Check port 5000: `netstat -ano | findstr :5000`
+- Try different port: edit `app.run()` in `mcp_server.py`
 
-**Langflow shows "Error on MCP Server":**
+**Langflow can't connect:**
 - Verify server is running: `curl http://localhost:5000/health`
-- Check API key matches in both server and Langflow config
-- Restart Langflow container: `docker restart langflow`
+- Check API key matches in both places
+- Use `host.docker.internal` not `localhost` in Langflow
 
-**Messages not reaching Teams:**
-- Test Power Automate webhook directly
-- Check webhook URL in `.env` file
-- Verify Power Automate flow is enabled
+## Files
 
-## Endpoints
+- `mcp_server.py` - **Main server** (use this!)
+- `mcp_sse_server.py` - Alternative simpler version
+- `.env` - Your configuration
+- `test_webhook.py` - Test scripts
 
-- `GET /health` - Health check
-- `GET /mcp/info` - Server information
-- `GET /mcp/sse` - SSE stream for MCP protocol
-- `POST /mcp/tools/list` - List available tools
-- `POST /mcp/tools/call` - Execute a tool
-- `POST /test` - Simple test endpoint
+## Why This Approach?
 
-## Next Steps
+✅ **Free** - Teams Incoming Webhook is free for everyone
+✅ **Simple** - No Azure, no premium Power Automate needed
+✅ **Works** - Uses standard Teams features available everywhere
+✅ **Flexible** - Add n8n for two-way communication if needed
 
-Want to add more features? Simply:
-1. Add new functions to the server
-2. Register them in `list_tools()` function
-3. They automatically appear in Langflow!
+## Need Help?
 
-This is the power of MCP - extensible and scalable! 🚀
+- Test individual endpoints: `curl http://localhost:5000/health`
+- Check server logs for errors
+- Verify webhook URL in Teams connector settings
+- Make sure `.env` file exists and has correct values
+
+Happy automating! 🚀
