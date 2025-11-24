@@ -16,14 +16,12 @@ from datetime import datetime
 # Load environment variables
 load_dotenv()
 
-# Configuration
-# TEAMS_WEBHOOK_URL = os.getenv(
-#     "TEAMS_WEBHOOK_URL",
-#     "https://default2780a32d11ce4c57bad5ce0cffc115.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/26e512fb89fa43aea71085fd99bada49/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=pQxmWrPAumQYq4SKLmX5zbew9YgQrwRYsIDyCHR_nVQ"
-# )
-TEAMS_WEBHOOK_URL = os.getenv("TEAMS_WEBHOOK_URL",
-    "https://default2780a32d11ce4c57bad5ce0cffc115.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/4c6193fbd6cb404db26c9a5474f02451/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ZCjuey-Mm27TfQ32JfudmuniMzTR5wi92BVXbz1UgJ4")
+# Configuration - Load from .env file only
+TEAMS_WEBHOOK_URL = os.getenv("TEAMS_WEBHOOK_URL")
 MCP_API_KEY = os.getenv("MCP_API_KEY", "langflow-teams-secret-123456")
+
+if not TEAMS_WEBHOOK_URL:
+    raise ValueError("TEAMS_WEBHOOK_URL must be set in .env file!")
 
 app = Flask(__name__)
 
@@ -43,30 +41,32 @@ session_lock = threading.Lock()
 def send_to_teams(message: str) -> dict:
     """Send a simple text message to Microsoft Teams via webhook"""
     try:
-        payload = {
-            "text": message,
-            "message": message,
-            "content": message
-        }
-        headers = {"Content-Type": "application/json"}
+        # Simple payload - just the message
+        payload = {"message": message}
+
+        print(f"\n[DEBUG] Sending to webhook: {TEAMS_WEBHOOK_URL[:80]}...")
+        print(f"[DEBUG] Payload: {json.dumps(payload, indent=2)}")
 
         response = requests.post(
             TEAMS_WEBHOOK_URL,
             json=payload,
-            headers=headers,
+            headers={"Content-Type": "application/json"},
             timeout=10
         )
+
+        print(f"[DEBUG] Response status: {response.status_code}")
+        print(f"[DEBUG] Response body: {response.text}\n")
 
         if response.status_code in [200, 202]:
             return {
                 "success": True,
-                "message": "Message sent to Teams successfully",
+                "message": "Message sent to Teams",
                 "status_code": response.status_code
             }
         else:
             return {
                 "success": False,
-                "message": f"Failed to send. Status: {response.status_code}",
+                "message": f"Failed: Status {response.status_code}",
                 "error": response.text
             }
     except Exception as e:

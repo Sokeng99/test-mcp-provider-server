@@ -322,7 +322,7 @@ if __name__ == "__main__":
     print("="*70)
     print("MCP Teams Server v1.0 - Simple & FREE!")
     print("="*70)
-    print(f"Webhook: {'✓ Configured' if TEAMS_WEBHOOK_URL else '✗ NOT SET'}")
+    print(f"Webhook: {'[OK] Configured' if TEAMS_WEBHOOK_URL else '[X] NOT SET'}")
     print(f"API Key: {MCP_API_KEY[:20]}...")
     print("="*70)
     print("\nEndpoints:")
