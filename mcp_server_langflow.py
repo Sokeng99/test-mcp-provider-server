@@ -16,6 +16,10 @@ from datetime import datetime
 # Load environment variables
 load_dotenv()
 
+# Configuration
+# Load environment variables
+load_dotenv()
+
 # Configuration - Load from .env file only
 TEAMS_WEBHOOK_URL = os.getenv("TEAMS_WEBHOOK_URL")
 MCP_API_KEY = os.getenv("MCP_API_KEY", "langflow-teams-secret-123456")
@@ -41,32 +45,30 @@ session_lock = threading.Lock()
 def send_to_teams(message: str) -> dict:
     """Send a simple text message to Microsoft Teams via webhook"""
     try:
-        # Simple payload - just the message
-        payload = {"message": message}
-
-        print(f"\n[DEBUG] Sending to webhook: {TEAMS_WEBHOOK_URL[:80]}...")
-        print(f"[DEBUG] Payload: {json.dumps(payload, indent=2)}")
+        payload = {
+            "text": message,
+            "message": message,
+            "content": message
+        }
+        headers = {"Content-Type": "application/json"}
 
         response = requests.post(
             TEAMS_WEBHOOK_URL,
             json=payload,
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             timeout=10
         )
-
-        print(f"[DEBUG] Response status: {response.status_code}")
-        print(f"[DEBUG] Response body: {response.text}\n")
 
         if response.status_code in [200, 202]:
             return {
                 "success": True,
-                "message": "Message sent to Teams",
+                "message": "Message sent to Teams successfully",
                 "status_code": response.status_code
             }
         else:
             return {
                 "success": False,
-                "message": f"Failed: Status {response.status_code}",
+                "message": f"Failed to send. Status: {response.status_code}",
                 "error": response.text
             }
     except Exception as e:
