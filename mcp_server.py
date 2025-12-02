@@ -28,7 +28,7 @@ app = Flask(__name__)
 sessions = {}
 session_lock = threading.Lock()
 
-# Message storage for two-way communication
+# Message storage for two-way
 incoming_messages = queue.Queue()
 message_history = []
 MAX_HISTORY = 100
