@@ -10,7 +10,10 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "WebSearch",
-      "Bash(del mcp_server_langflow.py mcp_server_graph_api.py mcp_server_simple.py POWER_AUTOMATE_SETUP.md QUICKSTART.md 2)"
+      "Bash(del mcp_server_langflow.py mcp_server_graph_api.py mcp_server_simple.py POWER_AUTOMATE_SETUP.md QUICKSTART.md 2)",
+      "Bash(docker exec:*)",
+      "Bash(docker restart:*)",
+      "Bash(docker logs:*)"
     ],
     "deny": [],
     "ask": []
