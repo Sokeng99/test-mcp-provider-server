@@ -13,7 +13,12 @@
       "Bash(del mcp_server_langflow.py mcp_server_graph_api.py mcp_server_simple.py POWER_AUTOMATE_SETUP.md QUICKSTART.md 2)",
       "Bash(docker exec:*)",
       "Bash(docker restart:*)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(where:*)",
+      "Bash(pip install:*)",
+      "Bash(powershell Compress-Archive -Path manifest.json,color.png,outline.png -DestinationPath ..xpilot-bot-teams-app.zip -Force)",
+      "Bash(dir:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

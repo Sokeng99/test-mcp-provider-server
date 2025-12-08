@@ -1,221 +1,183 @@
-# MCP Teams Server
+# X-Pilot Teams Bot
 
-Simple MCP server to send messages from Langflow to Microsoft Teams. **100% FREE** - no premium features required!
+AI-powered interactive bot for Microsoft Teams using Azure Bot Service and Langflow. **100% FREE** (Azure Bot Service free tier: 10,000 messages/month).
 
 ## Features
 
-- ✅ Send text messages to Teams
-- ✅ Send rich Adaptive Cards with formatting
-- ✅ Send images from local files
-- ✅ Full MCP protocol support for Langflow
-- ✅ Optional two-way communication with n8n
+- Interactive conversations with Langflow AI in Teams
+- Natural language processing and responses
+- Direct mentions (@xpilot-bot) in channels
+- Private 1-on-1 conversations
+- Easy deployment to Teams
 
-## Quick Setup (5 minutes)
+## Quick Setup
 
-### 1. Get Teams Incoming Webhook URL
+### Prerequisites
 
-1. In Microsoft Teams, go to your channel
-2. Click **...** → **Connectors** → **Incoming Webhook**
-3. Click **Add** → **Configure**
-4. Name: `Langflow Bot`
-5. Click **Create** and **copy the webhook URL**
+- Microsoft Azure account (free tier works)
+- Langflow running locally or accessible endpoint
+- ngrok for local development (free)
 
-### 2. Configure Environment
+### 1. Azure Bot Setup
 
-```bash
-# Copy example config
-cp .env.example .env
+See `TEAMS_BOT_SETUP.md` for complete step-by-step instructions.
 
-# Edit .env and paste your webhook URL
-TEAMS_WEBHOOK_URL=https://your-org.webhook.office.com/webhookb2/...
-MCP_API_KEY=langflow-teams-secret-123456
+Quick summary:
+1. Create Azure Bot Service resource
+2. Get App ID and create client secret in Microsoft Entra ID
+3. Configure messaging endpoint with ngrok URL
+
+### 2. Environment Configuration
+
+Create/edit `.env` file:
+
+```env
+# Azure Bot Service credentials
+MICROSOFT_APP_ID=your-app-id-here
+MICROSOFT_APP_PASSWORD=your-client-secret-here
+MICROSOFT_APP_TENANT_ID=your-tenant-id-here
+
+# Langflow Configuration
+LANGFLOW_URL=http://localhost:7860
+LANGFLOW_FLOW_ID=your-flow-id-here
+LANGFLOW_API_KEY=your-api-key-here
 ```
 
-### 3. Install & Run
+### 3. Install Dependencies
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
+```
 
-# Start server
-python mcp_server.py
+### 4. Run the Bot Server
+
+```bash
+python bot_server.py
 ```
 
 You should see:
 ```
-======================================================================
-MCP Teams Server v1.0 - Simple & FREE!
-======================================================================
-Webhook: ✓ Configured
+Flask app running on http://0.0.0.0:3978
+Bot is ready to receive messages at /api/messages
 ```
 
-### 4. Test It
+### 5. Setup ngrok (for local development)
 
 ```bash
-curl -X POST http://localhost:5000/test \
-  -H "Authorization: Bearer langflow-teams-secret-123456" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "🎉 Hello from MCP!"}'
+ngrok http 3978
 ```
 
-Check your Teams channel - you should see the message!
+Copy the HTTPS URL (e.g., `https://abc123.ngrok-free.app`) and configure it in Azure:
+- Azure Portal → Your Bot → Configuration → Messaging endpoint
+- Set to: `https://your-ngrok-url.ngrok-free.app/api/messages`
 
-### 5. Connect to Langflow
+### 6. Deploy to Teams
 
-In Langflow: **Settings** → **MCP Servers** → **Add Server**
+Use the Teams app package `xpilot-bot-teams-app.zip`:
 
-```json
-{
-  "mcpServers": {
-    "teams": {
-      "url": "http://host.docker.internal:5000/mcp/sse",
-      "headers": {
-        "Authorization": "Bearer langflow-teams-secret-123456"
-      },
-      "transport": {"type": "sse"}
-    }
-  }
-}
+1. Open Microsoft Teams
+2. Go to Apps → Manage your apps → Upload an app
+3. Upload `xpilot-bot-teams-app.zip`
+4. Add to team or chat
+
+See `TEAMS_APP_INSTALL_INSTRUCTIONS.md` for detailed instructions.
+
+## Usage
+
+### In Teams Channels
+
+Mention the bot:
+```
+@xpilot-bot What is the weather today?
 ```
 
-Now use **MCP Tools** component in your flows!
+### In Direct Messages
 
-## Available Tools
-
-### `send_teams_message`
-Send simple text message to Teams.
-
-```python
-{
-  "message": "Hello from Langflow!"
-}
+Just send a message:
 ```
-
-### `send_adaptive_card`
-Send rich formatted card with icons and facts.
-
-```python
-{
-  "title": "Status Update",
-  "message": "Workflow completed successfully",
-  "priority": "high",  # urgent, high, normal, low
-  "facts": {
-    "Status": "Complete",
-    "Duration": "2.5s"
-  }
-}
+Help me analyze this data
 ```
-
-### `send_teams_image`
-Send image from your local computer.
-
-```python
-{
-  "file_path": "C:\\path\\to\\image.png",
-  "caption": "Generated chart"
-}
-```
-
-### `get_teams_messages`
-Get messages sent from Teams (requires n8n setup - see below).
-
-## Two-Way Communication (Optional)
-
-To receive messages FROM Teams, use **n8n** (free, open-source automation):
-
-### Option 1: Using n8n (Recommended - FREE!)
-
-#### Install n8n:
-```bash
-# Using Docker
-docker run -it --rm --name n8n -p 5678:5678 -v ~/.n8n:/home/node/.n8n n8nio/n8n
-
-# Or using npm
-npm install -g n8n
-n8n
-```
-
-#### Create Workflow in n8n:
-
-1. Go to http://localhost:5678
-2. Create new workflow:
-
-**Trigger Node:**
-- Type: **Webhook**
-- Method: POST
-- Path: `teams-incoming`
-
-**HTTP Request Node:**
-- Method: POST
-- URL: `http://localhost:5000/teams/incoming`
-- Body:
-  ```json
-  {
-    "text": "{{ $json.body.text }}",
-    "user": "{{ $json.body.user }}"
-  }
-  ```
-
-3. Activate workflow
-4. Copy the webhook URL
-5. Use this URL in Teams Incoming Webhook or external trigger
-
-### Option 2: Python Polling (Simpler but less real-time)
-
-Create a Langflow component that polls Teams every 30 seconds using Microsoft Graph API. No external tools needed, but requires Graph API permissions.
 
 ## Architecture
 
-### One-Way (Default):
 ```
-Langflow → MCP Server → Teams Incoming Webhook → Teams Channel
+User in Teams → Azure Bot Service → bot_server.py → Langflow AI → Response back to user
 ```
-
-### Two-Way (with n8n):
-```
-Teams → n8n → MCP Server → Langflow
-Langflow → MCP Server → Teams Incoming Webhook → Teams
-```
-
-## Troubleshooting
-
-**"TEAMS_WEBHOOK_URL not configured"**
-- Make sure webhook URL is in `.env` file
-- Restart the server after editing `.env`
-
-**Messages not appearing in Teams:**
-- Test webhook URL directly with curl
-- Check Teams connector is still configured
-- Webhook URLs can expire - create a new one
-
-**Server won't start:**
-- Check port 5000: `netstat -ano | findstr :5000`
-- Try different port: edit `app.run()` in `mcp_server.py`
-
-**Langflow can't connect:**
-- Verify server is running: `curl http://localhost:5000/health`
-- Check API key matches in both places
-- Use `host.docker.internal` not `localhost` in Langflow
 
 ## Files
 
-- `mcp_server.py` - **Main server** (use this!)
-- `mcp_sse_server.py` - Alternative simpler version
-- `.env` - Your configuration
-- `test_webhook.py` - Test scripts
+- `bot_server.py` - Flask server that handles bot messages
+- `teams_bot.py` - Bot logic with Langflow integration
+- `.env` - Configuration (credentials and endpoints)
+- `requirements.txt` - Python dependencies
+- `teams-app/` - Teams app package files (manifest, icons)
+- `xpilot-bot-teams-app.zip` - Ready-to-upload Teams app
+- `TEAMS_BOT_SETUP.md` - Complete setup guide
+- `TEAMS_APP_INSTALL_INSTRUCTIONS.md` - How to install in Teams
+
+## Troubleshooting
+
+**Bot doesn't respond:**
+- Check bot server is running: `python bot_server.py`
+- Verify ngrok is running and URL is configured in Azure
+- Check logs for authentication errors
+
+**401 Authentication error:**
+- Verify `MICROSOFT_APP_PASSWORD` is set correctly in `.env`
+- Ensure tenant ID is configured
+- Check app registration in Microsoft Entra ID
+
+**Langflow connection failed:**
+- Verify `LANGFLOW_URL` is accessible from bot server
+- Check `LANGFLOW_FLOW_ID` is correct
+- Ensure `LANGFLOW_API_KEY` is set if required
+
+**Can't install Teams app:**
+- Check app package has all required files (manifest.json, icons)
+- Verify manifest.json bot ID matches your Azure bot's App ID
+- Try uploading to "Apps for [Your Team]" if org-wide upload is restricted
+
+## Development
+
+### Testing Locally
+
+1. Start bot server: `python bot_server.py`
+2. Start ngrok: `ngrok http 3978`
+3. Update Azure messaging endpoint with ngrok URL
+4. Test in Teams or Azure Bot "Test in Web Chat"
+
+### Production Deployment
+
+For production, deploy `bot_server.py` to:
+- Azure App Service
+- AWS EC2/Lambda
+- Google Cloud Run
+- Any hosting service that supports Python/Flask
+
+Replace ngrok URL with your production URL in Azure bot configuration.
+
+## Cost
+
+- Azure Bot Service: **FREE** (up to 10,000 messages/month)
+- Langflow: **FREE** (self-hosted)
+- ngrok: **FREE** (for development)
+- Teams: **FREE** (part of Microsoft 365)
+
+Total cost: **$0/month** for typical usage!
 
 ## Why This Approach?
 
-✅ **Free** - Teams Incoming Webhook is free for everyone
-✅ **Simple** - No Azure, no premium Power Automate needed
-✅ **Works** - Uses standard Teams features available everywhere
-✅ **Flexible** - Add n8n for two-way communication if needed
+- **Interactive** - Two-way conversations, not just notifications
+- **AI-Powered** - Integrates with your Langflow workflows
+- **Scalable** - Azure Bot Service handles the infrastructure
+- **Free** - No costs for typical usage
+- **Professional** - Uses official Microsoft Bot Framework
 
 ## Need Help?
 
-- Test individual endpoints: `curl http://localhost:5000/health`
-- Check server logs for errors
-- Verify webhook URL in Teams connector settings
-- Make sure `.env` file exists and has correct values
+1. Check `TEAMS_BOT_SETUP.md` for setup instructions
+2. Verify all credentials in `.env` are correct
+3. Test bot in Azure "Test in Web Chat" first before Teams
+4. Check bot server logs for error messages
 
-Happy automating! 🚀
+Happy chatting with your AI bot! 🤖
