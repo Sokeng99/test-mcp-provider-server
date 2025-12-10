@@ -5,6 +5,7 @@ AI-powered interactive bot for Microsoft Teams using Azure Bot Service and Langf
 ## Features
 
 - Interactive conversations with Langflow AI in Teams
+- **Multi-flow routing** - Automatically routes to different AI flows based on question type
 - Natural language processing and responses
 - Direct mentions (@xpilot-bot) in channels
 - Private 1-on-1 conversations
@@ -37,11 +38,23 @@ MICROSOFT_APP_ID=your-app-id-here
 MICROSOFT_APP_PASSWORD=your-client-secret-here
 MICROSOFT_APP_TENANT_ID=your-tenant-id-here
 
-# Langflow Configuration
-LANGFLOW_URL=http://localhost:7860
-LANGFLOW_FLOW_ID=your-flow-id-here
+# Langflow Configuration - Production
+LANGFLOW_URL=https://your-langflow-domain.com
 LANGFLOW_API_KEY=your-api-key-here
+
+# Multiple Flow Configuration
+# Chat Flow - General conversation
+LANGFLOW_CHAT_FLOW_ID=your-chat-flow-id
+
+# Requirement Analysis Flow - Meeting requirements, attendees, etc.
+LANGFLOW_REQUIREMENT_FLOW_ID=your-requirement-flow-id
 ```
+
+**Multi-Flow Routing**: The bot automatically detects the question type and routes to the appropriate Langflow flow:
+- **Requirement Analysis Flow** - Triggered by keywords like: `meeting`, `requirement`, `analysis`, `attendees`, `who should join`, `participants`, `stakeholders`, etc.
+- **Chat Flow** - Default for general conversation and questions
+
+You can customize the keywords in `teams_bot.py` (see `REQUIREMENT_KEYWORDS` constant).
 
 ### 3. Install Dependencies
 
@@ -97,6 +110,28 @@ Just send a message:
 ```
 Help me analyze this data
 ```
+
+### Multi-Flow Routing Examples
+
+The bot intelligently routes your questions to the appropriate AI flow:
+
+**General Chat Flow** (default):
+```
+Hello, how are you?
+What's the latest on the project?
+Can you explain this concept?
+```
+
+**Requirement Analysis Flow** (automatically triggered):
+```
+Who should attend the kickoff meeting?
+Analyze the requirements for this feature
+What are the meeting requirements?
+List the stakeholders for this project
+Who needs to be invited to the planning session?
+```
+
+The routing is based on keywords like: `meeting`, `requirement`, `analysis`, `attendees`, `participants`, `stakeholders`, etc.
 
 ## Architecture
 
