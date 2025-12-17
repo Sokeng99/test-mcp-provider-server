@@ -32,7 +32,7 @@ docker build -t registry.smart.com.kh/spa/xpilot-bot:v1.0.0 .
 docker login registry.smart.com.kh
 
 # Push image
-docker push registry.smart.com.kh/spa/xpilot-bot:v1.0.0
+docker push registry.smart.com.kh/spa/xpilot-bot:v1.0.1
 ```
 
 ### Step 2: Update Kubernetes Files
@@ -57,7 +57,7 @@ stringData:
 Update the image line:
 
 ```yaml
-image: registry.smart.com.kh/spa/xpilot-bot:v1.0.0 # Your actual registry
+image: registry.smart.com.kh/spa/xpilot-bot:v1.0.1 # Your actual registry
 ```
 
 ### Step 3: Deploy to Rancher

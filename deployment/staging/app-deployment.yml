@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: xpilot-bot-staging
-          image: registry.smart.com.kh/spa/xpilot-bot:v1.0.0
+          image: registry.smart.com.kh/spa/xpilot-bot:v1.0.1
           imagePullPolicy: Always
           resources:
             limits:
