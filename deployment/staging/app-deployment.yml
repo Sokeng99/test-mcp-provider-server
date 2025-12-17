@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: xpilot-bot-staging
-          image: registry.smart.com.kh/spa/xpilot-bot:v1.0.1
+          image: registry.smart.com.kh/spa/xpilot-bot:v1.0.2
           imagePullPolicy: Always
           resources:
             limits:
@@ -30,4 +30,4 @@ spec:
           ports:
             - containerPort: 3978
       imagePullSecrets:
-        - name: ai-project
+        - name: harbor-registry-secret

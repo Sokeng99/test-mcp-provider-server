@@ -240,23 +240,6 @@ Traditional server deployment:
 
 Replace ngrok URL with your production URL in Azure bot configuration.
 
-## Cost
-
-- Azure Bot Service: **FREE** (up to 10,000 messages/month)
-- Langflow: **FREE** (self-hosted)
-- ngrok: **FREE** (for development)
-- Teams: **FREE** (part of Microsoft 365)
-
-Total cost: **$0/month** for typical usage!
-
-## Why This Approach?
-
-- **Interactive** - Two-way conversations, not just notifications
-- **AI-Powered** - Integrates with your Langflow workflows
-- **Scalable** - Azure Bot Service handles the infrastructure
-- **Free** - No costs for typical usage
-- **Professional** - Uses official Microsoft Bot Framework
-
 ## Docker Build and Push Command
 docker build -t registry.smart.com.kh/spa/xpilot-bot:v1.0.2 .
 docker push registry.smart.com.kh/spa/xpilot-bot:v1.0.2
