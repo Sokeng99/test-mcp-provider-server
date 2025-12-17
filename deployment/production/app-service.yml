@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: xpilot-bot-production-svc
+  namespace: xpilot-production
+spec:
+  type: ClusterIP
+  selector:
+    app: xpilot-bot-production
+  ports:
+    - targetPort: 3978
+      port: 80

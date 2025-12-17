@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xpilot-bot-production
+  namespace: xpilot-production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: xpilot-bot-production
+  template:
+    metadata:
+      labels:
+        app: xpilot-bot-production
+    spec:
+      containers:
+        - name: xpilot-bot-production
+          image: registry.smart.com.kh/spa/xpilot-bot:v1.0.0
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          envFrom:
+            - secretRef:
+                name: xpilot-bot-secret
+          ports:
+            - containerPort: 3978
+      imagePullSecrets:
+        - name: registry-secret

@@ -24,6 +24,7 @@ AI-powered interactive bot for Microsoft Teams using Azure Bot Service and Langf
 See `TEAMS_BOT_SETUP.md` for complete step-by-step instructions.
 
 Quick summary:
+
 1. Create Azure Bot Service resource
 2. Get App ID and create client secret in Microsoft Entra ID
 3. Configure messaging endpoint with ngrok URL
@@ -51,6 +52,7 @@ LANGFLOW_REQUIREMENT_FLOW_ID=your-requirement-flow-id
 ```
 
 **Multi-Flow Routing**: The bot automatically detects the question type and routes to the appropriate Langflow flow:
+
 - **Requirement Analysis Flow** - Triggered by keywords like: `meeting`, `requirement`, `analysis`, `attendees`, `who should join`, `participants`, `stakeholders`, etc.
 - **Chat Flow** - Default for general conversation and questions
 
@@ -69,6 +71,7 @@ python bot_server.py
 ```
 
 You should see:
+
 ```
 Flask app running on http://0.0.0.0:3978
 Bot is ready to receive messages at /api/messages
@@ -81,6 +84,7 @@ ngrok http 3978
 ```
 
 Copy the HTTPS URL (e.g., `https://abc123.ngrok-free.app`) and configure it in Azure:
+
 - Azure Portal → Your Bot → Configuration → Messaging endpoint
 - Set to: `https://your-ngrok-url.ngrok-free.app/api/messages`
 
@@ -100,6 +104,7 @@ See `TEAMS_APP_INSTALL_INSTRUCTIONS.md` for detailed instructions.
 ### In Teams Channels
 
 Mention the bot:
+
 ```
 @xpilot-bot What is the weather today?
 ```
@@ -107,6 +112,7 @@ Mention the bot:
 ### In Direct Messages
 
 Just send a message:
+
 ```
 Help me analyze this data
 ```
@@ -116,6 +122,7 @@ Help me analyze this data
 The bot intelligently routes your questions to the appropriate AI flow:
 
 **General Chat Flow** (default):
+
 ```
 Hello, how are you?
 What's the latest on the project?
@@ -123,6 +130,7 @@ Can you explain this concept?
 ```
 
 **Requirement Analysis Flow** (automatically triggered):
+
 ```
 Who should attend the kickoff meeting?
 Analyze the requirements for this feature
@@ -153,21 +161,25 @@ User in Teams → Azure Bot Service → bot_server.py → Langflow AI → Respon
 ## Troubleshooting
 
 **Bot doesn't respond:**
+
 - Check bot server is running: `python bot_server.py`
 - Verify ngrok is running and URL is configured in Azure
 - Check logs for authentication errors
 
 **401 Authentication error:**
+
 - Verify `MICROSOFT_APP_PASSWORD` is set correctly in `.env`
 - Ensure tenant ID is configured
 - Check app registration in Microsoft Entra ID
 
 **Langflow connection failed:**
+
 - Verify `LANGFLOW_URL` is accessible from bot server
 - Check `LANGFLOW_FLOW_ID` is correct
 - Ensure `LANGFLOW_API_KEY` is set if required
 
 **Can't install Teams app:**
+
 - Check app package has all required files (manifest.json, icons)
 - Verify manifest.json bot ID matches your Azure bot's App ID
 - Try uploading to "Apps for [Your Team]" if org-wide upload is restricted
@@ -183,11 +195,48 @@ User in Teams → Azure Bot Service → bot_server.py → Langflow AI → Respon
 
 ### Production Deployment
 
-For production, deploy `bot_server.py` to:
-- Azure App Service
-- AWS EC2/Lambda
-- Google Cloud Run
-- Any hosting service that supports Python/Flask
+**Three deployment options:**
+
+#### Option 1: Docker + Kubernetes (Recommended for Organizations)
+
+Full enterprise deployment with high availability:
+
+- **Kubernetes/Rancher**: See [RANCHER_DEPLOYMENT.md](RANCHER_DEPLOYMENT.md) - Complete walkthrough
+- **Kubernetes Guide**: See [KUBERNETES_DEPLOYMENT.md](KUBERNETES_DEPLOYMENT.md) - Detailed K8s concepts
+- **CI/CD Pipeline**: See [CI_CD_PIPELINE.md](CI_CD_PIPELINE.md) - Automate deployments
+- **Includes**: Docker containerization, staging/production environments, auto-scaling, SSL, monitoring
+
+**Why this approach?**
+
+- ✅ Zero-downtime deployments
+- ✅ Auto-scaling based on load
+- ✅ Easy rollbacks
+- ✅ Professional grade infrastructure
+- ✅ Works in any cloud (Azure, AWS, GCP)
+
+#### Option 2: Platform-as-a-Service
+
+Simple deployment to managed services:
+
+- **Azure App Service**: Deploy Flask app directly
+- **Google Cloud Run**: Serverless container deployment
+- **AWS Lambda**: With Mangum adapter for Flask
+- **Heroku**: Easy deployment with Procfile
+
+#### Option 3: Simple VM/Server
+
+Traditional server deployment:
+
+- Deploy `bot_server.py` to any server with Python
+- Use systemd or supervisor to keep it running
+- Configure reverse proxy (nginx) for SSL
+
+**For Kubernetes deployment, your project includes:**
+
+- `Dockerfile` - Multi-stage optimized build
+- `.dockerignore` - Exclude unnecessary files
+- `deployment/staging/` - Staging environment configs
+- `deployment/production/` - Production environment configs with HPA
 
 Replace ngrok URL with your production URL in Azure bot configuration.
 
@@ -208,11 +257,6 @@ Total cost: **$0/month** for typical usage!
 - **Free** - No costs for typical usage
 - **Professional** - Uses official Microsoft Bot Framework
 
-## Need Help?
-
-1. Check `TEAMS_BOT_SETUP.md` for setup instructions
-2. Verify all credentials in `.env` are correct
-3. Test bot in Azure "Test in Web Chat" first before Teams
-4. Check bot server logs for error messages
-
-Happy chatting with your AI bot! 🤖
+## Docker Build and Push Command
+docker build -t registry.smart.com.kh/spa/xpilot-bot:v1.0.0 .
+docker push registry.smart.com.kh/spa/xpilot-bot:v1.0.0

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xpilot-bot-staging
+  namespace: xpilot-staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: xpilot-bot-staging
+  template:
+    metadata:
+      labels:
+        app: xpilot-bot-staging
+    spec:
+      containers:
+        - name: xpilot-bot-staging
+          image: registry.smart.com.kh/spa/xpilot-bot:v1.0.0
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          envFrom:
+            - secretRef:
+                name: xpilot-bot-secret
+          ports:
+            - containerPort: 3978
+      imagePullSecrets:
+        - name: registry-secret
