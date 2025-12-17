@@ -258,5 +258,5 @@ Total cost: **$0/month** for typical usage!
 - **Professional** - Uses official Microsoft Bot Framework
 
 ## Docker Build and Push Command
-docker build -t registry.smart.com.kh/spa/xpilot-bot:v1.0.1 .
-docker push registry.smart.com.kh/spa/xpilot-bot:v1.0.1
+docker build -t registry.smart.com.kh/spa/xpilot-bot:v1.0.2 .
+docker push registry.smart.com.kh/spa/xpilot-bot:v1.0.2
