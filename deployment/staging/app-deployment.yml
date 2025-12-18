@@ -13,6 +13,8 @@ spec:
       labels:
         app: xpilot-bot-staging
     spec:
+      imagePullSecrets:
+        - name: harbor-registry-secret
       containers:
         - name: xpilot-bot-staging
           image: registry.smart.com.kh/spa/xpilot-bot:v1.0.2
@@ -29,5 +31,3 @@ spec:
                 name: xpilot-bot-secret
           ports:
             - containerPort: 3978
-      imagePullSecrets:
-        - name: harbor-registry-secret
